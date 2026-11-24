@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NYC Airbnb room type predictor</title>
+  <meta name="description" content="Enter the details of a New York Airbnb listing and get the predicted room type." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400..800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div>
+        <h1>NYC Airbnb room type predictor</h1>
+        <p>Describe a New York listing and the model tells you which room type it most likely is.</p>
+      </div>
+      <p class="api-status" id="api-status" data-state="checking" role="status">
+        <span class="api-dot" aria-hidden="true"></span>
+        <span id="api-status-text">Checking API</span>
+      </p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ============ FORM ============ -->
+    <form id="predict-form" class="form" novalidate>
+      <fieldset class="group" style="--route: var(--blue)">
+        <legend><span class="route-dot" aria-hidden="true"></span>Location</legend>
+
+        <div class="fields">
+
+        <div class="field">
+          <label for="neighbourhood_group">Borough</label>
+          <select id="neighbourhood_group" name="neighbourhood_group" required>
+            <option value="" selected disabled>Choose a borough</option>
+            <option>Bronx</option>
+            <option>Brooklyn</option>
+            <option>Manhattan</option>
+            <option>Queens</option>
+            <option>Staten Island</option>
+          </select>
+          <p class="error" id="neighbourhood_group-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="neighbourhood">Neighbourhood</label>
+          <input id="neighbourhood" name="neighbourhood" type="text" list="neighbourhood-list"
+                 placeholder="e.g. Midtown" autocomplete="off" required />
+          <datalist id="neighbourhood-list"></datalist>
+          <p class="hint">Pick a suggestion or type the neighbourhood name.</p>
+          <p class="error" id="neighbourhood-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="latitude">Latitude</label>
+          <input id="latitude" name="latitude" type="number" inputmode="decimal"
+                 step="any" min="-90" max="90" placeholder="40.7536" required />
+          <p class="error" id="latitude-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="longitude">Longitude</label>
+          <input id="longitude" name="longitude" type="number" inputmode="decimal"
+                 step="any" min="-180" max="180" placeholder="-73.9832" required />
+          <p class="error" id="longitude-error" aria-live="polite"></p>
+        </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group" style="--route: var(--orange)">
+        <legend><span class="route-dot" aria-hidden="true"></span>Price and stay</legend>
+
+        <div class="fields">
+
+        <div class="field">
+          <label for="price">Price per night (USD)</label>
+          <input id="price" name="price" type="number" inputmode="decimal"
+                 step="0.01" min="0.01" placeholder="150" required />
+          <p class="error" id="price-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="minimum_nights">Minimum nights</label>
+          <input id="minimum_nights" name="minimum_nights" type="number" inputmode="numeric"
+                 step="1" min="1" max="365" placeholder="3" required />
+          <p class="hint">Between 1 and 365.</p>
+          <p class="error" id="minimum_nights-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="availability_365">Days available per year</label>
+          <input id="availability_365" name="availability_365" type="number" inputmode="numeric"
+                 step="1" min="0" max="365" placeholder="180" required />
+          <p class="hint">Between 0 and 365.</p>
+          <p class="error" id="availability_365-error" aria-live="polite"></p>
+        </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group" style="--route: var(--green)">
+        <legend><span class="route-dot" aria-hidden="true"></span>Reviews and host</legend>
+
+        <div class="fields">
+
+        <div class="field">
+          <label for="number_of_reviews">Total reviews</label>
+          <input id="number_of_reviews" name="number_of_reviews" type="number" inputmode="numeric"
+                 step="1" min="0" placeholder="45" required />
+          <p class="error" id="number_of_reviews-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="reviews_per_month">Reviews per month</label>
+          <input id="reviews_per_month" name="reviews_per_month" type="number" inputmode="decimal"
+                 step="0.01" min="0" placeholder="1.2" required />
+          <p class="error" id="reviews_per_month-error" aria-live="polite"></p>
+        </div>
+
+        <div class="field">
+          <label for="calculated_host_listings_count">Listings by this host</label>
+          <input id="calculated_host_listings_count" name="calculated_host_listings_count" type="number"
+                 inputmode="numeric" step="1" min="0" placeholder="2" required />
+          <p class="error" id="calculated_host_listings_count-error" aria-live="polite"></p>
+        </div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="btn-label">Predict room type</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="sample-btn">Fill example listing</button>
+        <button type="reset" class="btn btn-quiet" id="reset-btn">Clear form</button>
+      </div>
+    </form>
+
+    <!-- ============ RESULT ============ -->
+    <aside class="result-panel" id="result-panel" aria-live="polite" aria-labelledby="result-title">
+      <h2 id="result-title" class="visually-hidden">Prediction result</h2>
+
+      <!-- idle -->
+      <section class="state state-idle" id="state-idle">
+        <div class="idle-line" aria-hidden="true">
+          <span class="stop"></span><span class="stop"></span><span class="stop"></span>
+        </div>
+        <p class="state-title">Your prediction will appear here</p>
+        <p class="state-text">Fill in the listing details, then choose Predict room type.</p>
+      </section>
+
+      <!-- loading -->
+      <section class="state state-loading" id="state-loading" hidden>
+        <div class="track" aria-hidden="true">
+          <span class="stop"></span><span class="stop"></span><span class="stop"></span>
+          <span class="train"></span>
+        </div>
+        <p class="state-title">Predicting room type</p>
+        <p class="state-text">Waiting for the model to respond.</p>
+      </section>
+
+      <!-- success -->
+      <section class="state state-result" id="state-result" hidden>
+        <div class="bullet" id="result-bullet" aria-hidden="true">E</div>
+        <p class="result-kicker">Predicted room type</p>
+        <p class="result-label" id="result-label">Entire home/apt</p>
+        <p class="result-blurb" id="result-blurb"></p>
+        <p class="result-confidence" id="result-confidence"></p>
+
+        <h3 class="prob-title">How the model split its confidence</h3>
+        <ul class="prob-list" id="prob-list"></ul>
+
+        <button type="button" class="btn btn-secondary btn-block" id="again-btn">Edit listing and predict again</button>
+      </section>
+
+      <!-- error -->
+      <section class="state state-error" id="state-error" hidden role="alert">
+        <div class="error-mark" aria-hidden="true">!</div>
+        <p class="state-title" id="error-title">Something went wrong</p>
+        <p class="state-text" id="error-text"></p>
+        <button type="button" class="btn btn-secondary" id="retry-btn">Try again</button>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p>Sends a POST request to <code>/predict</code> on your FastAPI server.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
