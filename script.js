@@ -5,7 +5,7 @@
    ========================================================== */
 
 // uvicorn serves plain HTTP unless you start it with SSL certificates.
-const API_BASE = "http://127.0.0.1:2200";
+const API_BASE = "https://nyc-airbnb-room-type-predictor-ucjr.onrender.com";
 
 // scikit-learn sorts class labels alphabetically, and predict_proba
 // returns probabilities in that order. Change this list if your
